@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multiply Fractions</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 10px;
+    }
+    .choices {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .choice {
+      padding: 10px 20px;
+      border: 2px solid black;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 18px;
+      background-color: #fff;
+      transition: background-color 0.3s;
+    }
+    .choice:hover {
+      background-color: #f0f0f0;
+    }
+    .correct {
+      background-color: lightgreen !important;
+    }
+    .incorrect {
+      background-color: lightcoral !important;
+    }
+    #question {
+      font-size: 22px;
+      margin: 20px;
+    }
+    .fraction {
+      display: inline-block;
+      text-align: center;
+      vertical-align: middle;
+      margin: 0 2px;
+    }
+    .fraction .top {
+      display: block;
+      border-bottom: 1px solid #000;
+      padding: 0 2px;
+    }
+    .fraction .bottom {
+      display: block;
+      padding: 0 2px;
+    }
+    #feedback {
+      font-size: 20px;
+      margin: 20px;
+    }
+    #starCounter {
+      display: inline-block;
+      margin-right: 20px;
+    }
+    #message {
+      display: inline-block;
+      height: 24px; /* reserve space */
+    }
+  </style>
+</head>
+<body>
+  <h1>Multiply Fractions</h1>
+  <div id="question"></div>
+  <div class="choices" id="choices"></div>
+  <div id="feedback">
+    <span id="starCounter">⭐ 0</span>
+    <span id="message"></span>
+  </div>
+  
+  <script>
+    var starCount = 0;
+
+    // Update the star counter display
+    function updateStarCounter() {
+      document.getElementById("starCounter").innerHTML = "⭐ " + starCount;
+    }
+
+    // Render a fraction vertically
+    function renderFraction(numerator, denominator) {
+      return '<span class="fraction"><span class="top">' + numerator + '</span><span class="bottom">' + denominator + '</span></span>';
+    }
+
+    // Compute greatest common divisor (GCD)
+    function gcd(a, b) {
+      return b === 0 ? a : gcd(b, a % b);
+    }
+
+    // Return the fraction in simplest form as a string "num/denom"
+    function simplifyFraction(n, d) {
+      var g = gcd(n, d);
+      return (n / g) + "/" + (d / g);
+    }
+
+    // Fisher-Yates shuffle to randomize choices
+    function shuffleArray(array) {
+      for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+      }
+    }
+
+    // Generate a new question where the user multiplies two fractions
+    function generateQuestion() {
+      document.getElementById("message").innerHTML = "";
+      var choices = [];
+      var denominators = [2, 3, 4, 5, 6, 8, 10];
+      
+      // Randomly generate two fractions
+      var numerator1 = Math.floor(Math.random() * 8) + 1; // 1 to 8
+      var denominator1 = denominators[Math.floor(Math.random() * denominators.length)];
+      var numerator2 = Math.floor(Math.random() * 8) + 1;
+      var denominator2 = denominators[Math.floor(Math.random() * denominators.length)];
+
+      var fraction1 = renderFraction(numerator1, denominator1);
+      var fraction2 = renderFraction(numerator2, denominator2);
+
+      // Calculate product
+      var prodNumerator = numerator1 * numerator2;
+      var prodDenom = denominator1 * denominator2;
+      var correctFraction = simplifyFraction(prodNumerator, prodDenom);
+
+      var questionText = "Multiply " + fraction1 + " × " + fraction2 + ":";
+      
+      // Generate wrong answer choices (ensuring no duplicate simplified fractions)
+      while (choices.length < 4) {
+        var candidate = null;
+        if (Math.random() < 0.5) {
+          // Adjust the numerator slightly
+          var offset = Math.floor(Math.random() * 5) - 2;
+          if (offset === 0) { offset = 1; }
+          var newNumerator = prodNumerator + offset;
+          if (newNumerator > 0) {
+            candidate = simplifyFraction(newNumerator, prodDenom);
+          }
+        }
+        if (!candidate) {
+          // Adjust the denominator slightly
+          var offset2 = Math.floor(Math.random() * 5) - 2;
+          if (offset2 === 0) { offset2 = 1; }
+          var newDenom = prodDenom + offset2;
+          if (newDenom > 0) {
+            candidate = simplifyFraction(prodNumerator, newDenom);
+          }
+        }
+        if (choices.indexOf(candidate) === -1) {
+          choices.push(candidate);
+        }
+      }
+      
+      // Always include the correct answer and then randomize the order
+      choices.unshift(correctFraction);
+      choices = Array.from(new Set(choices)).slice(0,4);
+      if (choices.indexOf(correctFraction) === -1) {
+        choices[0] = correctFraction;
+      }
+      shuffleArray(choices);
+      
+      document.getElementById("question").innerHTML = questionText;
+      var choicesDiv = document.getElementById("choices");
+      choicesDiv.innerHTML = "";
+      for (var i = 0; i < choices.length; i++) {
+        var choice = choices[i];
+        var parts = choice.split("/");
+        var displayFraction = renderFraction(parts[0], parts[1]);
+        var btn = document.createElement("div");
+        btn.className = "choice";
+        btn.innerHTML = displayFraction;
+        btn.onclick = (function(selected, correct) {
+          return function() {
+            if (selected === correct) {
+              this.classList.add("correct");
+              document.getElementById("message").innerHTML = "Correct! 🎉";
+              starCount++;
+              updateStarCounter();
+              setTimeout(generateQuestion, 1000);
+            } else {
+              this.classList.add("incorrect");
+              document.getElementById("message").innerHTML = "Incorrect! ❌";
+              starCount--;
+              updateStarCounter();
+            }
+          };
+        })(choice, correctFraction);
+        choicesDiv.appendChild(btn);
+      }
+    }
+
+    window.onload = function() {
+      updateStarCounter();
+      generateQuestion();
+    };
+  </script>
+</body>
+</html>
