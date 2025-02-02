@@ -65,13 +65,45 @@
     }
     #message {
       display: inline-block;
-      height: 24px; /* reserve space */
+      height: 24px;
+    }
+    /* Visual container styles */
+    .visual-container {
+      margin: 20px auto;
+    }
+    .line {
+      display: flex;
+      border: 2px solid black;
+      height: 30px;
+      width: 200px;
+      margin: 5px auto;
+    }
+    .segment {
+      flex: 1;
+      border-right: 1px solid black;
+      background-color: white;
+    }
+    .segment:last-child {
+      border-right: none;
+    }
+    h2 {
+      margin-top: 40px;
+      font-size: 20px;
     }
   </style>
 </head>
 <body>
   <h1>Multiply Fractions</h1>
   <div id="question"></div>
+
+  <!-- Visualizations -->
+  <h2>Fraction Bars</h2>
+  <div id="visual1" class="visual-container"></div>
+  <div id="visual2" class="visual-container"></div>
+  
+  <h2>Multiplication Grid</h2>
+  <div id="visualGrid" class="visual-container"></div>
+  
   <div class="choices" id="choices"></div>
   <div id="feedback">
     <span id="starCounter">⭐ 0</span>
@@ -86,7 +118,7 @@
       document.getElementById("starCounter").innerHTML = "⭐ " + starCount;
     }
 
-    // Render a fraction vertically
+    // Render a fraction in vertical layout (for answer choices)
     function renderFraction(numerator, denominator) {
       return '<span class="fraction"><span class="top">' + numerator + '</span><span class="bottom">' + denominator + '</span></span>';
     }
@@ -112,6 +144,44 @@
       }
     }
 
+    // Draw a fraction bar visualization inside a given container
+    function generateVisualBar(numerator, denominator, containerId) {
+      var container = document.getElementById(containerId);
+      container.innerHTML = "";
+      var line = document.createElement("div");
+      line.className = "line";
+      for (var i = 0; i < denominator; i++) {
+        var segment = document.createElement("div");
+        segment.className = "segment";
+        if (i < numerator) {
+          segment.style.backgroundColor = "lightgray";
+        }
+        line.appendChild(segment);
+      }
+      container.appendChild(line);
+    }
+
+    // Create a grid visualization to represent the multiplication of fractions.
+    // The grid has denominator1 columns and denominator2 rows. The highlighted area (first numerator1 columns and first numerator2 rows)
+    // represents the product area.
+    function generateMultiplicationGrid(numerator1, denominator1, numerator2, denominator2) {
+      var gridContainer = document.getElementById("visualGrid");
+      gridContainer.innerHTML = "";
+      for (var r = 0; r < denominator2; r++) {
+        var line = document.createElement("div");
+        line.className = "line";
+        for (var c = 0; c < denominator1; c++) {
+          var segment = document.createElement("div");
+          segment.className = "segment";
+          if (r < numerator2 && c < numerator1) {
+            segment.style.backgroundColor = "lightgreen";
+          }
+          line.appendChild(segment);
+        }
+        gridContainer.appendChild(line);
+      }
+    }
+
     // Generate a new question where the user multiplies two fractions
     function generateQuestion() {
       document.getElementById("message").innerHTML = "";
@@ -124,17 +194,23 @@
       var numerator2 = Math.floor(Math.random() * 8) + 1;
       var denominator2 = denominators[Math.floor(Math.random() * denominators.length)];
 
-      var fraction1 = renderFraction(numerator1, denominator1);
-      var fraction2 = renderFraction(numerator2, denominator2);
+      // Render fraction bars for each fraction
+      generateVisualBar(numerator1, denominator1, "visual1");
+      generateVisualBar(numerator2, denominator2, "visual2");
+      // Create the multiplication grid showing the overlapping product area
+      generateMultiplicationGrid(numerator1, denominator1, numerator2, denominator2);
 
-      // Calculate product
+      // Calculate product and simplify
       var prodNumerator = numerator1 * numerator2;
       var prodDenom = denominator1 * denominator2;
       var correctFraction = simplifyFraction(prodNumerator, prodDenom);
 
-      var questionText = "Multiply " + fraction1 + " × " + fraction2 + ":";
+      // Prepare the question text using rendered fractions
+      var fractionDisplay1 = renderFraction(numerator1, denominator1);
+      var fractionDisplay2 = renderFraction(numerator2, denominator2);
+      var questionText = "Multiply " + fractionDisplay1 + " × " + fractionDisplay2 + ":";
       
-      // Generate wrong answer choices (ensuring no duplicate simplified fractions)
+      // Generate wrong answer choices (avoiding duplicates)
       while (choices.length < 4) {
         var candidate = null;
         if (Math.random() < 0.5) {
